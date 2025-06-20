@@ -1,15 +1,19 @@
 package Controller;
 
+import java.sql.Connection;
+import java.sql.DatabaseMetaData;
+import java.sql.DriverManager;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.util.ArrayList;
+import java.sql.Statement;
+import java.sql.SQLException;
+
+
 import Model.History;
 import Model.Logs;
 import Model.Product;
 import Model.User;
-import java.sql.Connection;
-import java.sql.DatabaseMetaData;
-import java.sql.DriverManager;
-import java.sql.ResultSet;
-import java.sql.Statement;
-import java.util.ArrayList;
 
 public class SQLite {
     
@@ -180,20 +184,24 @@ public class SQLite {
     }
     
     public void addUser(String username, String password) {
-        String sql = "INSERT INTO users(username,password) VALUES('" + username + "','" + password + "')";
-        
+        String sql = "INSERT INTO users(username, password, role) VALUES (?, ?, ?)";
+
         try (Connection conn = DriverManager.getConnection(driverURL);
-            Statement stmt = conn.createStatement()){
-            stmt.execute(sql);
-            
-//      PREPARED STATEMENT EXAMPLE
-//      String sql = "INSERT INTO users(username,password) VALUES(?,?)";
-//      PreparedStatement pstmt = conn.prepareStatement(sql)) {
-//      pstmt.setString(1, username);
-//      pstmt.setString(2, password);
-//      pstmt.executeUpdate();
-        } catch (Exception ex) {
-            System.out.print(ex);
+                PreparedStatement pstmt = conn.prepareStatement(sql)) {
+
+            pstmt.setString(1, username);
+            pstmt.setString(2, password);
+            pstmt.setInt(3, 2);
+            pstmt.executeUpdate();
+
+            // PREPARED STATEMENT EXAMPLE
+            // String sql = "INSERT INTO users(username,password) VALUES(?,?)";
+            // PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            // pstmt.setString(1, username);
+            // pstmt.setString(2, password);
+            // pstmt.executeUpdate();
+        } catch (SQLException ex) {
+            System.err.println("Database error in addUser(): " + ex.getMessage());
         }
     }
     
@@ -259,51 +267,62 @@ public class SQLite {
         }
         return products;
     }
-    
-    public ArrayList<User> getUsers(){
-        String sql = "SELECT id, username, password, role, locked FROM users";
-        ArrayList<User> users = new ArrayList<User>();
-        
-        try (Connection conn = DriverManager.getConnection(driverURL);
-            Statement stmt = conn.createStatement();
-            ResultSet rs = stmt.executeQuery(sql)){
-            
-            while (rs.next()) {
-                users.add(new User(rs.getInt("id"),
-                                   rs.getString("username"),
-                                   rs.getString("password"),
-                                   rs.getInt("role"),
-                                   rs.getInt("locked")));
-            }
-        } catch (Exception ex) {}
-        return users;
-    }
-    
-    public void addUser(String username, String password, int role) {
-        String sql = "INSERT INTO users(username,password,role) VALUES('" + username + "','" + password + "','" + role + "')";
-        
-        try (Connection conn = DriverManager.getConnection(driverURL);
-            Statement stmt = conn.createStatement()){
-            stmt.execute(sql);
-            
-        } catch (Exception ex) {
-            System.out.print(ex);
+
+    public ArrayList<User> getUsers() {
+    String sql = "SELECT id, username, password, role, locked FROM users";
+    ArrayList<User> users = new ArrayList<>();
+
+    try (Connection conn = DriverManager.getConnection(driverURL);
+         Statement stmt = conn.createStatement();
+         ResultSet rs = stmt.executeQuery(sql)) {
+
+        while (rs.next()) {
+            users.add(new User(rs.getInt("id"),
+                               rs.getString("username"),
+                               rs.getString("password"),
+                               rs.getInt("role"),
+                               rs.getInt("locked")));
         }
+
+    } catch (SQLException ex) {
+        System.err.println("Database error in getUsers(): " + ex.getMessage());
     }
-    
-    public void removeUser(String username) {
-        String sql = "DELETE FROM users WHERE username='" + username + "';";
+    return users;
+}
+
+
+    public void addUser(String username, String password, int role) {
+        String sql = "INSERT INTO users(username, password, role) VALUES (?, ?, ?)";
 
         try (Connection conn = DriverManager.getConnection(driverURL);
-            Statement stmt = conn.createStatement()) {
-            stmt.execute(sql);
-            System.out.println("User " + username + " has been deleted.");
-        } catch (Exception ex) {
-            System.out.print(ex);
+                PreparedStatement pstmt = conn.prepareStatement(sql)) {
+
+            pstmt.setString(1, username);
+            pstmt.setString(2, password);
+            pstmt.setInt(3, role);
+            pstmt.executeUpdate();
+
+        } catch (SQLException ex) {
+            System.err.println("Database error in addUser(): " + ex.getMessage());
         }
     }
+
+    public void removeUser(String username) {
+    String sql = "DELETE FROM users WHERE username = ?";
+
+    try (Connection conn = DriverManager.getConnection(driverURL);
+         PreparedStatement pstmt = conn.prepareStatement(sql)) {
+
+        pstmt.setString(1, username);
+        pstmt.executeUpdate();
+        System.out.println("User " + username + " has been deleted.");
+
+    } catch (SQLException ex) {
+        System.err.println("Database error in removeUser(): " + ex.getMessage());
+    }
+    }
     
-    public Product getProduct(String name){
+        public Product getProduct(String name){
         String sql = "SELECT name, stock, price FROM product WHERE name='" + name + "';";
         Product product = null;
         try (Connection conn = DriverManager.getConnection(driverURL);
@@ -317,4 +336,44 @@ public class SQLite {
         }
         return product;
     }
+
+    public User getUserByUsernameAndPassword(String username, String hashedPassword) {
+    String sql = "SELECT * FROM users WHERE username = ? AND password = ?";
+    try (Connection conn = DriverManager.getConnection(driverURL);
+         PreparedStatement pstmt = conn.prepareStatement(sql)) {
+        pstmt.setString(1, username);
+        pstmt.setString(2, hashedPassword);
+        ResultSet rs = pstmt.executeQuery();
+
+        if (rs.next()) {
+            return new User(
+                rs.getInt("id"),
+                rs.getString("username"),
+                rs.getString("password"),
+                rs.getInt("role"),
+                rs.getInt("locked")
+            );
+        }
+    } catch (SQLException ex) {
+        System.err.println("Database error in getUserByUsernameAndPassword(): " + ex.getMessage());
+    }
+    return null;
+}
+
+public boolean usernameExists(String username) {
+    String sql = "SELECT 1 FROM users WHERE LOWER(username) = LOWER(?) LIMIT 1";
+    
+    try (Connection conn = DriverManager.getConnection(driverURL);
+         PreparedStatement pstmt = conn.prepareStatement(sql)) {
+        
+        pstmt.setString(1, username);
+        ResultSet rs = pstmt.executeQuery();
+        
+        return rs.next(); // true if a row exists
+    } catch (SQLException ex) {
+        System.err.println("Database error in usernameExists(): " + ex.getMessage());
+        return false;
+    }
+}
+
 }

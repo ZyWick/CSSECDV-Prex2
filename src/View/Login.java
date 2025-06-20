@@ -1,6 +1,13 @@
 
 package View;
 
+import java.util.Arrays;
+import javax.swing.JOptionPane;
+
+import Controller.SQLite;
+import Model.User;
+import Utils.PasswordUtils;
+
 public class Login extends javax.swing.JPanel {
 
     public Frame frame;
@@ -15,7 +22,7 @@ public class Login extends javax.swing.JPanel {
 
         jLabel1 = new javax.swing.JLabel();
         usernameFld = new javax.swing.JTextField();
-        passwordFld = new javax.swing.JTextField();
+        passwordFld = new javax.swing.JPasswordField();
         registerBtn = new javax.swing.JButton();
         loginBtn = new javax.swing.JButton();
 
@@ -83,7 +90,32 @@ public class Login extends javax.swing.JPanel {
         );
     }// </editor-fold>//GEN-END:initComponents
     private void loginBtnActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_loginBtnActionPerformed
-        frame.mainNav();
+        String username = usernameFld.getText().trim();
+    char[] password = passwordFld.getPassword();
+
+    if (username.isEmpty() || password.length == 0) {
+        JOptionPane.showMessageDialog(this, "Username and password must not be empty.", "Login Error", JOptionPane.ERROR_MESSAGE);
+        return;
+    }
+
+    try {
+        SQLite db = new SQLite();
+        String passwordStr = new String(password);
+
+        String hashedPassword = PasswordUtils.hashPassword(passwordStr);
+        Arrays.fill(password, '0');
+        passwordStr = null;
+   
+        User user = db.getUserByUsernameAndPassword(username, hashedPassword);
+
+        if (user != null) {
+            frame.mainNav(user);
+        } else {
+            JOptionPane.showMessageDialog(this, "Invalid username or password.", "Login Failed", JOptionPane.ERROR_MESSAGE);
+        }
+    } catch (Exception ex) {
+        JOptionPane.showMessageDialog(this, "Login error: " + ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+    }
     }//GEN-LAST:event_loginBtnActionPerformed
 
     private void registerBtnActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_registerBtnActionPerformed
@@ -94,7 +126,7 @@ public class Login extends javax.swing.JPanel {
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JLabel jLabel1;
     private javax.swing.JButton loginBtn;
-    private javax.swing.JTextField passwordFld;
+    private javax.swing.JPasswordField passwordFld;
     private javax.swing.JButton registerBtn;
     private javax.swing.JTextField usernameFld;
     // End of variables declaration//GEN-END:variables

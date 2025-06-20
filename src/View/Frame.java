@@ -1,9 +1,13 @@
 package View;
 
 import Controller.Main;
+import Model.User;
+
 import java.awt.BorderLayout;
 import java.awt.CardLayout;
 import java.awt.Dimension;
+
+import javax.swing.JOptionPane;
 import javax.swing.WindowConstants;
 
 public class Frame extends javax.swing.JFrame {
@@ -223,12 +227,7 @@ public class Frame extends javax.swing.JFrame {
         this.main = controller;
         loginPnl.frame = this;
         registerPnl.frame = this;
-        
-        adminHomePnl.init(main.sqlite);
-        clientHomePnl.init(main.sqlite);
-        managerHomePnl.init(main.sqlite);
-        staffHomePnl.init(main.sqlite);
-        
+               
         Container.setLayout(frameView);
         Container.add(loginPnl, "loginPnl");
         Container.add(registerPnl, "registerPnl");
@@ -244,8 +243,45 @@ public class Frame extends javax.swing.JFrame {
         this.setVisible(true);
     }
     
-    public void mainNav(){
+    public void mainNav(User user){
         frameView.show(Container, "homePnl");
+
+        int role = user.getRole();
+        
+        // Hide all buttons first
+        adminBtn.setVisible(false);
+        managerBtn.setVisible(false);
+        staffBtn.setVisible(false);
+        clientBtn.setVisible(false);
+        
+        switch (role) {
+        case 5:
+            adminHomePnl.init(main.sqlite);
+            contentView.show(Content, "adminHomePnl");
+            adminBtn.setVisible(true);
+            break;
+        case 4:
+            managerHomePnl.init(main.sqlite);
+            contentView.show(Content, "managerHomePnl");
+            managerBtn.setVisible(true);
+            break;
+        case 3:
+            staffHomePnl.init(main.sqlite);
+            contentView.show(Content, "staffHomePnl");
+            staffBtn.setVisible(true);
+            break;
+        case 2:
+            clientHomePnl.init(main.sqlite);
+            contentView.show(Content, "clientHomePnl");
+            clientBtn.setVisible(true);
+            break;
+        case 1:
+            JOptionPane.showMessageDialog(this, "Access Denied: disabled user.");
+            loginNav();
+        default:
+            JOptionPane.showMessageDialog(this, "Access Denied: Unknown role.");
+            loginNav();
+    }
     }
     
     public void loginNav(){

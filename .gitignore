@@ -22,3 +22,48 @@
 # virtual machine crash logs, see http://www.java.com/en/download/help/error_hotspot.xml
 hs_err_pid*
 replay_pid*
+
+
+# NetBeans specific
+nbproject/private/
+nbbuild/
+dist/
+nbdist/
+.nb-gradle/
+.buildpath
+.classpath
+.project
+.settings/
+
+# Maven
+target/
+
+# Gradle
+build/
+.gradle/
+
+# Common Java ignores
+*.class
+*.jar
+*.war
+*.ear
+*.log
+*.tmp
+
+# OS-specific files
+.DS_Store
+Thumbs.db
+ehthumbs.db
+Icon?
+Desktop.ini
+
+# IDE-specific (optional extras)
+*.iml
+.idea/
+.vscode/
+
+# Local environment
+*.swp
+*.swo
+*.bak
+*~

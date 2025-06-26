@@ -1,19 +1,18 @@
-
 package View;
 
 import java.util.Arrays;
 import javax.swing.JOptionPane;
 
 import Controller.SQLite;
-import Model.User;
 import Utils.AppLogger;
 import Utils.PasswordUtils;
 import java.awt.HeadlessException;
-
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 public class Login extends javax.swing.JPanel {
 
     public Frame frame;
-    
+
     public Login() {
         initComponents();
     }
@@ -93,32 +92,38 @@ public class Login extends javax.swing.JPanel {
     }// </editor-fold>//GEN-END:initComponents
     private void loginBtnActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_loginBtnActionPerformed
         String username = usernameFld.getText().trim();
-    char[] password = passwordFld.getPassword();
+        char[] password = passwordFld.getPassword();
 
-    if (username.isEmpty() || password.length == 0) {
-        JOptionPane.showMessageDialog(this, "Username and password must not be empty.", "Login Error", JOptionPane.ERROR_MESSAGE);
-        return;
-    }
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss.SSS");
+        String timestamp = LocalDateTime.now().format(formatter);
+        
+        if (username.isEmpty() || password.length == 0) {
+            JOptionPane.showMessageDialog(this, "Username and password must not be empty.", "Login Error", JOptionPane.ERROR_MESSAGE);
+            return;
+        }
 
-    try {
-        SQLite db = new SQLite();
-        String passwordStr = new String(password);
+        try {
+            SQLite db = new SQLite();
+            String passwordStr = new String(password);
 
-        String hashedPassword = PasswordUtils.hashPassword(passwordStr);
-        Arrays.fill(password, '0');
-        passwordStr = null;
-   
-        SQLite.LoginResponse response = db.tryLogin(username, hashedPassword);
+            String hashedPassword = PasswordUtils.hashPassword(passwordStr);
+            Arrays.fill(password, '0');
+            passwordStr = null;
+
+            SQLite.LoginResponse response = db.tryLogin(username, hashedPassword);
 
             switch (response.result) {
                 case SUCCESS:
                     frame.mainNav(response.user); // full User object
+                    db.addLogs("LOGIN_SUCCESS", username, "User logged in successfully", timestamp);
                     break;
                 case INVALID_CREDENTIALS:
                     JOptionPane.showMessageDialog(this, "Incorrect username or password.", "Login Failed", JOptionPane.ERROR_MESSAGE);
+                    db.addLogs("LOGIN_FAIL", username, "Incorrect password entered", timestamp);
                     break;
                 case ACCOUNT_LOCKED:
                     JOptionPane.showMessageDialog(this, response.message, "Account Locked", JOptionPane.WARNING_MESSAGE);
+                    db.addLogs("ACCOUNT_LOCKED", username, "User account temporarily locked due to failed attempts", timestamp);
                     break;
             }
 

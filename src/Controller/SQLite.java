@@ -8,6 +8,8 @@ import java.sql.ResultSet;
 import java.sql.Statement;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.Date;
+import java.text.SimpleDateFormat;
 
 import Model.History;
 import Model.Logs;
@@ -157,15 +159,23 @@ public class SQLite {
     }
 
     public void addLogs(String event, String username, String desc, String timestamp) {
-        String sql = "INSERT INTO logs(event,username,desc,timestamp) VALUES('" + event + "','" + username + "','"
-                + desc + "','" + timestamp + "')";
+        String sql = "INSERT INTO logs(event, username, desc, timestamp) VALUES (?, ?, ?, ?)";
 
-        try (Connection conn = DriverManager.getConnection(driverURL); Statement stmt = conn.createStatement()) {
-            stmt.execute(sql);
+        try (Connection conn = DriverManager.getConnection(driverURL);
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+
+            pstmt.setString(1, event);
+            pstmt.setString(2, username);
+            pstmt.setString(3, desc);
+            pstmt.setString(4, timestamp);
+
+            pstmt.executeUpdate();
+
         } catch (Exception ex) {
-            System.out.print(ex);
+            AppLogger.logError("Failed to insert log entry", ex);
         }
     }
+
 
     public void addProduct(String name, int stock, double price) {
         String sql = "INSERT INTO product(name,stock,price) VALUES('" + name + "','" + stock + "','" + price + "')";
@@ -264,10 +274,8 @@ public class SQLite {
                         rs.getString("username"),
                         rs.getString("password"),
                         rs.getInt("role"),
-                        rs.getInt("locked"),
-                        rs.getInt("failed_attempts"),
-                        rs.getLong("locked_until"))
-                );
+                        rs.getInt("locked")
+                ));
             }
 
         } catch (SQLException ex) {
@@ -338,7 +346,7 @@ public class SQLite {
 
     public LoginResponse tryLogin(String username, String hashedPassword) {
         String sql = "SELECT * FROM users WHERE LOWER(username) = LOWER(?)";
-
+        
         try (Connection conn = DriverManager.getConnection(driverURL); PreparedStatement pstmt = conn.prepareStatement(sql)) {
             pstmt.setString(1, username);
             ResultSet rs = pstmt.executeQuery();
@@ -365,9 +373,7 @@ public class SQLite {
                             rs.getString("username"),
                             dbPassword,
                             rs.getInt("role"),
-                            rs.getInt("locked"),
-                            0,
-                            0
+                            rs.getInt("locked")
                     );
                     return new LoginResponse(LoginResult.SUCCESS, user, null);
                 } else {
@@ -407,7 +413,7 @@ public class SQLite {
             pstmt.executeUpdate();
         } catch (SQLException ex) {
             AppLogger.logError("handleFailedLogin failed", ex);
-        } 
+        }
     }
 
     public boolean usernameExists(String username) {

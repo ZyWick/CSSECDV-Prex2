@@ -7,6 +7,8 @@ import javax.swing.JOptionPane;
 
 import Utils.PasswordUtils;
 import java.awt.HeadlessException;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 
 public class Register extends javax.swing.JPanel {
 
@@ -108,6 +110,8 @@ public class Register extends javax.swing.JPanel {
             String username = usernameFld.getText().trim();
             char[] password = passwordFld.getPassword();
             char[] confirm = confpassFld.getPassword();
+            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss.SSS");
+            String timestamp = LocalDateTime.now().format(formatter);
 
             SQLite db = new SQLite();
             if (db.usernameExists(username)) {
@@ -144,6 +148,7 @@ public class Register extends javax.swing.JPanel {
             passwordStr = null;
 
             frame.registerAction(username, hashedPassword, hashedPassword);
+            db.addLogs("REGISTER_SUCCESS", username, "User account created successfully", timestamp);
             frame.loginNav();
         } catch (HeadlessException ex) {
             AppLogger.logError("Registration failed", ex);

@@ -5,6 +5,7 @@ import Model.History;
 import Model.Logs;
 import Model.Product;
 import Model.User;
+import Utils.AppLogger;
 import View.Frame;
 import java.sql.Timestamp;
 import java.util.ArrayList;
@@ -22,7 +23,9 @@ public class Main {
     
     public void init(){
         // Initialize a driver object
+        
         sqlite = new SQLite();
+        AppLogger.setDebugLevel(sqlite.DEBUG_MODE);
 
 //        // Create a database
 //        sqlite.createNewDatabase();

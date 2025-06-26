@@ -1,16 +1,17 @@
-
 package View;
 
 import Controller.SQLite;
+import Utils.AppLogger;
 import java.util.Arrays;
 import javax.swing.JOptionPane;
 
 import Utils.PasswordUtils;
+import java.awt.HeadlessException;
 
 public class Register extends javax.swing.JPanel {
 
     public Frame frame;
-    
+
     public Register() {
         initComponents();
     }
@@ -103,46 +104,51 @@ public class Register extends javax.swing.JPanel {
     }// </editor-fold>//GEN-END:initComponents
 
     private void registerBtnActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_registerBtnActionPerformed
-        String username = usernameFld.getText().trim();
-        char[] password = passwordFld.getPassword();
-        char[] confirm = confpassFld.getPassword();
+        try {
+            String username = usernameFld.getText().trim();
+            char[] password = passwordFld.getPassword();
+            char[] confirm = confpassFld.getPassword();
 
-        SQLite db = new SQLite();
-        if (db.usernameExists(username)) {
-        JOptionPane.showMessageDialog(this, "Username already exists.", "Error", JOptionPane.ERROR_MESSAGE);
-        return;
+            SQLite db = new SQLite();
+            if (db.usernameExists(username)) {
+                JOptionPane.showMessageDialog(this, "Username already exists.", "Error", JOptionPane.ERROR_MESSAGE);
+                return;
+            }
+
+            if (!isStrongPassword(password)) {
+                JOptionPane.showMessageDialog(this,
+                        "Password must be at least 8 characters long and include:\n"
+                        + "- Uppercase letter\n"
+                        + "- Lowercase letter\n"
+                        + "- Number\n"
+                        + "- Special character (!@#$%^&* etc.)",
+                        "Weak Password",
+                        JOptionPane.ERROR_MESSAGE);
+                return;
+            }
+
+            if (!Arrays.equals(password, confirm)) {
+                JOptionPane.showMessageDialog(this, "Passwords do not match.", "Error", JOptionPane.ERROR_MESSAGE);
+                return;
+            }
+
+            // Convert char[] to String securely
+            String passwordStr = new String(password);
+
+            // Clear sensitive data
+            Arrays.fill(password, '0');
+            Arrays.fill(confirm, '0');
+
+            // Hash the password
+            String hashedPassword = PasswordUtils.hashPassword(passwordStr);
+            passwordStr = null;
+
+            frame.registerAction(username, hashedPassword, hashedPassword);
+            frame.loginNav();
+        } catch (HeadlessException ex) {
+            AppLogger.logError("Registration failed", ex);
+            JOptionPane.showMessageDialog(this, "An unexpected error occurred during registration.", "Error", JOptionPane.ERROR_MESSAGE);
         }
-
-        if (!isStrongPassword(password)) {
-            JOptionPane.showMessageDialog(this,
-                "Password must be at least 8 characters long and include:\n" +
-                "- Uppercase letter\n" +
-                "- Lowercase letter\n" +
-                "- Number\n" +
-                "- Special character (!@#$%^&* etc.)",
-                "Weak Password",
-                JOptionPane.ERROR_MESSAGE);
-            return;
-        }
-
-        if (!Arrays.equals(password, confirm)) {
-            JOptionPane.showMessageDialog(this, "Passwords do not match.", "Error", JOptionPane.ERROR_MESSAGE);
-            return;
-        }
-        
-        // Convert char[] to String securely
-        String passwordStr = new String(password);
-
-        // Clear sensitive data
-        Arrays.fill(password, '0');
-        Arrays.fill(confirm, '0');
-
-        // Hash the password
-        String hashedPassword = PasswordUtils.hashPassword(passwordStr);
-        passwordStr = null;
-
-        frame.registerAction(username, hashedPassword, hashedPassword);
-        frame.loginNav();
     }//GEN-LAST:event_registerBtnActionPerformed
 
     private void backBtnActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_backBtnActionPerformed
@@ -160,7 +166,9 @@ public class Register extends javax.swing.JPanel {
     // End of variables declaration//GEN-END:variables
 
     private boolean isStrongPassword(char[] password) {
-        if (password.length < 8) return false;
+        if (password.length < 8) {
+            return false;
+        }
 
         boolean hasUpper = false;
         boolean hasLower = false;
@@ -168,10 +176,15 @@ public class Register extends javax.swing.JPanel {
         boolean hasSpecial = false;
 
         for (char c : password) {
-            if (Character.isUpperCase(c)) hasUpper = true;
-            else if (Character.isLowerCase(c)) hasLower = true;
-            else if (Character.isDigit(c)) hasDigit = true;
-            else if ("!@#$%^&*()-_=+[]{}|;:'\",.<>?/`~".indexOf(c) >= 0) hasSpecial = true;
+            if (Character.isUpperCase(c)) {
+                hasUpper = true;
+            } else if (Character.isLowerCase(c)) {
+                hasLower = true;
+            } else if (Character.isDigit(c)) {
+                hasDigit = true;
+            } else if ("!@#$%^&*()-_=+[]{}|;:'\",.<>?/`~".indexOf(c) >= 0) {
+                hasSpecial = true;
+            }
         }
 
         return hasUpper && hasLower && hasDigit && hasSpecial;

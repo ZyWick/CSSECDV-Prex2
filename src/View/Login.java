@@ -6,7 +6,9 @@ import javax.swing.JOptionPane;
 
 import Controller.SQLite;
 import Model.User;
+import Utils.AppLogger;
 import Utils.PasswordUtils;
+import java.awt.HeadlessException;
 
 public class Login extends javax.swing.JPanel {
 
@@ -106,16 +108,23 @@ public class Login extends javax.swing.JPanel {
         Arrays.fill(password, '0');
         passwordStr = null;
    
-        User user = db.getUserByUsernameAndPassword(username, hashedPassword);
+        SQLite.LoginResponse response = db.tryLogin(username, hashedPassword);
 
-        if (user != null) {
-            frame.mainNav(user);
-        } else {
-            JOptionPane.showMessageDialog(this, "Invalid username or password.", "Login Failed", JOptionPane.ERROR_MESSAGE);
+            switch (response.result) {
+                case SUCCESS:
+                    frame.mainNav(response.user); // full User object
+                    break;
+                case INVALID_CREDENTIALS:
+                    JOptionPane.showMessageDialog(this, "Incorrect username or password.", "Login Failed", JOptionPane.ERROR_MESSAGE);
+                    break;
+                case ACCOUNT_LOCKED:
+                    JOptionPane.showMessageDialog(this, response.message, "Account Locked", JOptionPane.WARNING_MESSAGE);
+                    break;
+            }
+
+        } catch (HeadlessException ex) {
+            AppLogger.logError("Login failed", ex);
         }
-    } catch (Exception ex) {
-        JOptionPane.showMessageDialog(this, "Login error: " + ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
-    }
     }//GEN-LAST:event_loginBtnActionPerformed
 
     private void registerBtnActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_registerBtnActionPerformed

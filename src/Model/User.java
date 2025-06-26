@@ -1,25 +1,30 @@
 package Model;
 
 public class User {
+
     private int id;
     private String username;
     private String password;
     private int role = 2;
     private int locked = 0;
+    private int failedAttempts;
+    private long lockedUntil;
 
-    public User(String username, String password){
+    public User(String username, String password) {
         this.username = username;
         this.password = password;
     }
-    
-    public User(int id, String username, String password, int role, int locked){
+
+    public User(int id, String username, String password, int role, int locked, int failedAttempts, long lockedUntil) {
         this.id = id;
         this.username = username;
         this.password = password;
         this.role = role;
         this.locked = locked;
+        this.failedAttempts = failedAttempts;
+        this.lockedUntil = lockedUntil;
     }
-    
+
     public int getId() {
         return id;
     }
@@ -59,4 +64,21 @@ public class User {
     public void setLocked(int locked) {
         this.locked = locked;
     }
+
+    public int getFailedAttempts() {
+        return failedAttempts;
+    }
+
+    public void setFailedAttempts(int failedAttempts) {
+        this.failedAttempts = failedAttempts;
+    }
+
+    public long getLockedUntil() {
+        return lockedUntil;
+    }
+
+    public void setLockedUntil(long lockedUntil) {
+        this.lockedUntil = lockedUntil;
+    }
+
 }
